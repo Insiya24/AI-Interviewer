@@ -1,6 +1,6 @@
-# 🤖 AI Interviewer - SDE Intern Position
+# 🤖 AI Interviewer 
 
-A production-ready AI-powered interview system that conducts technical and behavioral interviews for Software Development Engineer (SDE) Intern positions using Google's Gemini AI.
+A production-ready AI-powered interview system that conducts technical and behavioral interviews for Engineer positions using Google's Gemini AI.
 
 ## ✨ Features
 
