@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interviewer - SDE Intern</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .progress-container {
+            background: #f0f0f0;
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-counter {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .video-container {
+            position: relative;
+            margin: 20px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        video {
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .question-display {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+
+        .question-display h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .question-display p {
+            color: #555;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .recording-indicator {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #dc3545;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+
+        .recording-dot {
+            width: 12px;
+            height: 12px;
+            background: #dc3545;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #667eea;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .evaluation {
+            background: #e8f5e8;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            display: none;
+        }
+
+        .evaluation h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .score-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .final-summary {
+            background: #fff3cd;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .logs {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .log-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .log-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Interviewer</h1>
+            <p>SDE Intern Position Interview</p>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="question-counter" id="questionCounter">
+            Welcome! Let's start with your introduction.
+        </div>
+
+        <div class="video-container">
+            <video id="videoElement" autoplay muted></video>
+        </div>
+
+        <div class="recording-indicator" id="recordingIndicator">
+            <div class="recording-dot"></div>
+            <span>Recording...</span>
+        </div>
+
+        <div class="loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <span>Processing your response...</span>
+        </div>
+
+        <div class="question-display" id="questionDisplay">
+            <h3>👋 Introduction</h3>
+            <p>Hi! I'm your AI interviewer for the SDE Intern role. Please introduce yourself, mention your technical skills, and tell me why you're interested in this position. You have up to 2 minutes.</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" id="startRecordBtn" onclick="startRecording()">
+                🎥 Start Recording
+            </button>
+            <button class="btn-danger" id="stopRecordBtn" onclick="stopRecording()" disabled>
+                ⏹️ Stop Recording
+            </button>
+            <button class="btn-secondary" id="reRecordBtn" onclick="reRecord()" style="display: none;">
+                🔄 Re-record
+            </button>
+            <button class="btn-success" id="nextBtn" onclick="nextQuestion()" style="display: none;">
+                ➡️ Next Question
+            </button>
+        </div>
+
+        <div class="evaluation" id="evaluationDisplay"></div>
+
+        <div class="final-summary" id="finalSummary"></div>
+
+        <div class="logs" id="logsContainer">
+            <div class="log-entry log-info">System initialized. Ready to start interview.</div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let mediaRecorder;
+        let recordedChunks = [];
+        let stream;
+        let currentQuestionIndex = 0;
+        let questions = [];
+        let sessionId = '';
+        let isIntroduction = true;
+        let evaluations = [];
+
+        const API_BASE = 'http://localhost:8000';
+
+        // DOM elements
+        const videoElement = document.getElementById('videoElement');
+        const startRecordBtn = document.getElementById('startRecordBtn');
+        const stopRecordBtn = document.getElementById('stopRecordBtn');
+        const reRecordBtn = document.getElementById('reRecordBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const recordingIndicator = document.getElementById('recordingIndicator');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const questionDisplay = document.getElementById('questionDisplay');
+        const questionCounter = document.getElementById('questionCounter');
+        const progressBar = document.getElementById('progressBar');
+        const evaluationDisplay = document.getElementById('evaluationDisplay');
+        const finalSummary = document.getElementById('finalSummary');
+        const logsContainer = document.getElementById('logsContainer');
+
+        // Utility functions
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function showLoading(show = true) {
+            loadingIndicator.style.display = show ? 'flex' : 'none';
+        }
+
+        function showRecordingIndicator(show = true) {
+            recordingIndicator.style.display = show ? 'flex' : 'none';
+        }
+
+        function updateProgress() {
+            if (isIntroduction) {
+                progressBar.style.width = '10%';
+            } else {
+                const progress = ((currentQuestionIndex + 1) / questions.length) * 90 + 10;
+                progressBar.style.width = `${progress}%`;
+            }
+        }
+
+        // Initialize camera
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 },
+                    audio: true
+                });
+                videoElement.srcObject = stream;
+                addLog('Camera initialized successfully', 'success');
+            } catch (error) {
+                addLog(`Camera initialization failed: ${error.message}`, 'error');
+                alert('Please allow camera and microphone access to continue with the interview.');
+            }
+        }
+
+        // Recording functions
+        function startRecording() {
+            if (!stream) {
+                addLog('No camera stream available', 'error');
+                return;
+            }
+
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9'
+            });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                processRecording(blob);
+            };
+
+            mediaRecorder.start();
+            showRecordingIndicator(true);
+            
+            startRecordBtn.disabled = true;
+            stopRecordBtn.disabled = false;
+            reRecordBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+
+            addLog('Recording started', 'info');
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                showRecordingIndicator(false);
+                
+                startRecordBtn.disabled = false;
+                stopRecordBtn.disabled = true;
+                reRecordBtn.style.display = 'inline-block';
+
+                addLog('Recording stopped', 'info');
+            }
+        }
+
+        function reRecord() {
+            recordedChunks = [];
+            reRecordBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            evaluationDisplay.style.display = 'none';
+            addLog('Ready to re-record', 'info');
+        }
+
+        // Process recorded video
+        async function processRecording(videoBlob) {
+            showLoading(true);
+            
+            try {
+                const formData = new FormData();
+                formData.append('video', videoBlob, 'recording.webm');
+
+                let response;
+                if (isIntroduction) {
+                    addLog('Analyzing introduction...', 'info');
+                    response = await fetch(`${API_BASE}/analyze_intro`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    const currentQuestion = questions[currentQuestionIndex];
+                    formData.append('session_id', sessionId);
+                    formData.append('question_id', currentQuestion.id);
+                    formData.append('question_text', currentQuestion.question);
+
+                    addLog(`Analyzing answer to question ${currentQuestionIndex + 1}...`, 'info');
+                    response = await fetch(`${API_BASE}/analyze_answer`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (isIntroduction) {
+                    handleIntroductionResult(result);
+                } else {
+                    handleAnswerResult(result);
+                }
+
+            } catch (error) {
+                addLog(`Processing failed: ${error.message}`, 'error');
+                alert('Failed to process recording. Please try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle introduction analysis result
+        function handleIntroductionResult(result) {
+            sessionId = result.session_id;
+            questions = result.questions;
+            
+            addLog(`Introduction analyzed. Found ${questions.length} questions generated.`, 'success');
+            
+            // Display candidate info
+            evaluationDisplay.innerHTML = `
+                <h4>✅ Introduction Analysis Complete</h4>
+                <p><strong>Name:</strong> ${result.name}</p>
+                <p><strong>Skills Identified:</strong> ${result.skills.join(', ')}</p>
+                <p><strong>Strengths:</strong> ${result.strengths.join(', ')}</p>
+                <p><strong>Areas for Development:</strong> ${result.weaknesses.join(', ')}</p>
+                <p><strong>Questions Generated:</strong> ${questions.length} questions ready</p>
+            `;
+            evaluationDisplay.style.display = 'block';
+            
+            nextBtn.style.display = 'inline-block';
+            nextBtn.textContent = 'Start Interview Questions';
+            
+            updateProgress();
+        }
+
+        // Handle answer analysis result
+        function handleAnswerResult(result) {
+            evaluations.push(result);
+            
+            addLog(`Answer evaluated. Scores - Technical: ${result.technical_score}/10, Problem-solving: ${result.problem_solving_score}/10, Communication: ${result.communication_score}/10`, 'success');
+            
+            // Display evaluation
+            evaluationDisplay.innerHTML = `
+                <h4>📊 Answer Evaluation</h4>
+                <div class="score-grid">
+                    <div class="score-item">
+                        <div class="score-value">${result.technical_score}/10</div>
+                        <div>Technical</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-value">${result.problem_solving_score}/10</div>
+                        <div>Problem Solving</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-value">${result.communication_score}/10</div>
+                        <div>Communication</div>
+                    </div>
+                </div>
+                <p><strong>Transcription:</strong> ${result.transcription}</p>
+                <p><strong>Technical Feedback:</strong> ${result.technical_feedback}</p>
+                <p><strong>Problem-solving Feedback:</strong> ${result.problem_solving_feedback}</p>
+                <p><strong>Communication Feedback:</strong> ${result.communication_feedback}</p>
+            `;
+            evaluationDisplay.style.display = 'block';
+            
+            nextBtn.style.display = 'inline-block';
+            if (currentQuestionIndex < questions.length - 1) {
+                nextBtn.textContent = 'Next Question';
+            } else {
+                nextBtn.textContent = 'Complete Interview';
+            }
+            
+            updateProgress();
+        }
+
+        // Move to next question or complete interview
+        function nextQuestion() {
+            if (isIntroduction) {
+                isIntroduction = false;
+                currentQuestionIndex = 0;
+                displayCurrentQuestion();
+            } else if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                displayCurrentQuestion();
+            } else {
+                completeInterview();
+            }
+            
+            // Reset UI for next question
+            reRecordBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            evaluationDisplay.style.display = 'none';
+        }
+
+        // Display current question
+        function displayCurrentQuestion() {
+            const question = questions[currentQuestionIndex];
+            const questionNum = currentQuestionIndex + 1;
+            
+            questionCounter.textContent = `Question ${questionNum} of ${questions.length}`;
+            
+            questionDisplay.innerHTML = `
+                <h3>❓ Question ${questionNum} - ${question.type.toUpperCase()}</h3>
+                <p>${question.question}</p>
+                <small style="color: #666;">Category: ${question.category}</small>
+            `;
+            
+            addLog(`Displaying question ${questionNum}: ${question.question}`, 'info');
+            updateProgress();
+        }
+
+        // Complete interview and show final summary
+        async function completeInterview() {
+            showLoading(true);
+            addLog('Generating final evaluation...', 'info');
+            
+            try {
+                const formData = new FormData();
+                formData.append('session_id', sessionId);
+                
+                const response = await fetch(`${API_BASE}/final_evaluation`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const finalResult = await response.json();
+                
+                progressBar.style.width = '100%';
+                questionCounter.textContent = 'Interview Complete!';
+                questionDisplay.style.display = 'none';
+                
+                finalSummary.innerHTML = `
+                    <h3>🎉 Interview Complete!</h3>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <div class="score-value">${finalResult.avg_technical}/10</div>
+                            <div>Avg Technical</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-value">${finalResult.avg_problem_solving}/10</div>
+                            <div>Avg Problem Solving</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-value">${finalResult.avg_communication}/10</div>
+                            <div>Avg Communication</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-value">${finalResult.overall_score}/10</div>
+                            <div>Overall Score</div>
+                        </div>
+                    </div>
+                    <p><strong>Overall Feedback:</strong> ${finalResult.overall_feedback}</p>
+                    <p><strong>Recommendation:</strong> ${finalResult.recommendation}</p>
+                    <p><strong>Questions Answered:</strong> ${finalResult.total_questions}</p>
+                `;
+                finalSummary.style.display = 'block';
+                
+                // Hide all control buttons
+                document.querySelector('.controls').style.display = 'none';
+                
+                addLog('Interview completed successfully!', 'success');
+                
+            } catch (error) {
+                addLog(`Final evaluation failed: ${error.message}`, 'error');
+                alert('Failed to generate final evaluation. Please contact support.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Initialize the application
+        window.addEventListener('load', () => {
+            initCamera();
+            addLog('AI Interviewer initialized. Click "Start Recording" to begin.', 'success');
+        });
+    </script>
+</body>
+</html>
